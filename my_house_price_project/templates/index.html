@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI House Price Predictor</title>
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-hover: #1D4ED8;
+            --background: #F8FAFC;
+            --surface: #FFFFFF;
+            --text: #0F172A;
+            --text-light: #64748B;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .card {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            width: 100%;
+            max-width: 600px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h2 { margin: 0 0 0.5rem 0; font-size: 1.8rem; }
+        p { margin: 0; color: var(--text-light); }
+
+        /* Grid layout for inputs */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Make the last input span both columns if odd number of inputs */
+        .full-width { grid-column: 1 / -1; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: #F8FAFC;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--surface);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        button:active { transform: scale(0.98); }
+
+        #result {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 10px;
+            background-color: #EFF6FF;
+            color: var(--primary);
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            display: none;
+            border: 1px solid #BFDBFE;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 500px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h2>Property Valuation AI</h2>
+        <p>Enter property details for an instant market estimate</p>
+    </div>
+
+    <form id="prediction-form">
+        <div class="form-grid">
+            <div>
+                <label for="sqft">Square Footage</label>
+                <input type="number" id="sqft" required placeholder="e.g., 2500" step="any">
+            </div>
+            <div>
+                <label for="bedrooms">Bedrooms</label>
+                <input type="number" id="bedrooms" required placeholder="e.g., 3" step="any">
+            </div>
+            <div>
+                <label for="bathrooms">Bathrooms</label>
+                <input type="number" id="bathrooms" required placeholder="e.g., 2" step="any">
+            </div>
+            <div>
+                <label for="year">Year Built</label>
+                <input type="number" id="year" required placeholder="e.g., 2010" step="any">
+            </div>
+            <div>
+                <label for="lot_size">Lot Size (Acres/SqFt)</label>
+                <input type="number" id="lot_size" required placeholder="e.g., 0.5" step="any">
+            </div>
+            <div>
+                <label for="garage">Garage Size (Cars)</label>
+                <input type="number" id="garage" required placeholder="e.g., 2" step="any">
+            </div>
+            <div class="full-width">
+                <label for="quality">Neighborhood Quality (1-10)</label>
+                <input type="number" id="quality" required placeholder="e.g., 8" min="1" max="10" step="any">
+            </div>
+        </div>
+        <button type="submit">Calculate Valuation</button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Gather all 7 inputs
+        const data = {
+            sqft: document.getElementById('sqft').value,
+            bedrooms: document.getElementById('bedrooms').value,
+            bathrooms: document.getElementById('bathrooms').value,
+            year: document.getElementById('year').value,
+            lot_size: document.getElementById('lot_size').value,
+            garage: document.getElementById('garage').value,
+            quality: document.getElementById('quality').value
+        };
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerText = 'Analyzing market data...';
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            if(result.error) {
+                resultDiv.innerText = 'Error: ' + result.error;
+                resultDiv.style.backgroundColor = '#FEF2F2';
+                resultDiv.style.color = '#DC2626';
+                resultDiv.style.borderColor = '#FECACA';
+            } else {
+                resultDiv.innerText = 'Estimated Value: ' + result.predicted_price;
+                resultDiv.style.backgroundColor = '#EFF6FF';
+                resultDiv.style.color = 'var(--primary)';
+                resultDiv.style.borderColor = '#BFDBFE';
+            }
+        } catch (err) {
+            resultDiv.innerText = 'Failed to connect to server.';
+        }
+    });
+</script>
+
+</body>
+</html>
